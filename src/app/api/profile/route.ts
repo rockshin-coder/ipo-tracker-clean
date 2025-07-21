@@ -1,10 +1,9 @@
-// src/app/api/profile/route.ts
+/* ------------------------------------------------------------------
+   GET /api/profile?symbol=TSLA
+-------------------------------------------------------------------*/
 import { NextResponse } from "next/server";
 import { getCompanyProfile } from "@/lib/finnhub";
 
-/**
- * GET /api/profile?symbol=TSLA
- */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const symbol = searchParams.get("symbol");
@@ -17,17 +16,14 @@ export async function GET(req: Request) {
   }
 
   try {
-    // ──────────────────
     const profile = await getCompanyProfile(symbol);
-    // ──────────────────
     return NextResponse.json(profile);
-  } catch (e: unknown) {
-    // e 타입을 정확히 모를 때는 unknown → any 캐스트
-    const err = e as any;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  } catch (e: any) {
     console.error(
       "Finnhub proxy error:",
-      err?.response?.status,
-      err?.response?.data,
+      e?.response?.status,
+      e?.response?.data,
     );
     return NextResponse.json({ error: "Upstream error" }, { status: 502 });
   }
