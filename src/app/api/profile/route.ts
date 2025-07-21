@@ -1,22 +1,34 @@
+// src/app/api/profile/route.ts
 import { NextResponse } from "next/server";
 import { getCompanyProfile } from "@/lib/finnhub";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const symbol = searchParams.get("symbol") ?? "";
+/**
+ * GET /api/profile?symbol=TSLA
+ */
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const symbol = searchParams.get("symbol");
 
   if (!symbol) {
     return NextResponse.json(
-      { error: "Query param 'symbol' is required" },
-      { status: 400 }
+      { error: "symbol query‑param required" },
+      { status: 400 },
     );
   }
 
   try {
-    const data = await getCompanyProfile(symbol);
-    return NextResponse.json(data);
-} catch (e: any) {
-    console.error("Finnhub proxy error:", e?.response?.status, e?.response?.data);
+    // ──────────────────
+    const profile = await getCompanyProfile(symbol);
+    // ──────────────────
+    return NextResponse.json(profile);
+  } catch (e: unknown) {
+    // e 타입을 정확히 모를 때는 unknown → any 캐스트
+    const err = e as any;
+    console.error(
+      "Finnhub proxy error:",
+      err?.response?.status,
+      err?.response?.data,
+    );
     return NextResponse.json({ error: "Upstream error" }, { status: 502 });
   }
-  
+}
