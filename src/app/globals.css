@@ -24,3 +24,134 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ============ IPO Tracker 전용 ============ */
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+}
+
+.date-field input {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 140px;
+}
+
+.fetch-btn {
+  padding: 0.6rem 1.5rem;
+  background-color: #1060ff;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.25s, transform 0.25s;
+}
+
+.fetch-btn:hover:not(:disabled) {
+  background-color: #0047d4;
+  transform: translateY(-2px);
+}
+
+.fetch-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ipo-table {
+  margin: 0 auto;
+  width: 90%;
+  border-collapse: collapse;
+  min-width: 620px;
+}
+
+.ipo-table th,
+.ipo-table td {
+  border: 1px solid #ddd;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.ipo-table th {
+  background-color: #f0f0f0;
+  font-weight: 600;
+}
+
+.no-data {
+  text-align: center;
+  padding: 1rem;
+}
+
+.symbol-link {
+  color: #1060ff;
+  text-decoration: none;
+}
+
+.symbol-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Status 색상 ---------- */
+.status-expected  { color: #2563eb; } /* 파란색   */
+.status-priced    { color: #059669; } /* 초록색   */
+.status-filed     { color: #d97706; } /* 주황색   */
+.status-withdrawn { color: #dc2626; } /* 빨간색   */
+
+/* ============ 회사 프로필 페이지 ============ */
+.company-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.company-container h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.company-table {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 680px;
+  border-collapse: collapse;
+}
+
+.company-table th,
+.company-table td {
+  border: 1px solid #ddd;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+}
+
+.company-table th {
+  width: 30%;
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+

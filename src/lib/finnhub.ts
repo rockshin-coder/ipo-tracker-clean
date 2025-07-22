@@ -1,21 +1,21 @@
-
+// src/lib/finnhub.ts
 import axios from "axios";
 
 /*───────────────────────────────*
- *  타입 정의                      *
+ *  타입 정의
  *───────────────────────────────*/
 export interface IpoItem {
   symbol: string;
-  company?: string;
+  company?: string;          // 일부 엔드포인트엔 회사명이 없을 수 있음
   exchange: string;
   date: string;
   numberOfShares: number;
   price: string;
-  status: string;
+  status: string;            // ← 신규: filed | priced | withdrawn 등
 }
 
 /*───────────────────────────────*
- *  Axios 인스턴스                *
+ *  Axios 인스턴스
  *───────────────────────────────*/
 const apiBase =
   process.env.NEXT_PUBLIC_API_BASE || "https://finnhub.io/api/v1";
@@ -25,7 +25,7 @@ const api = axios.create({
 });
 
 /*───────────────────────────────*
- *  API 키 처리                   *
+ *  API 키 처리
  *───────────────────────────────*/
 const token = process.env.NEXT_PUBLIC_FINNHUB_API_KEY as string;
 
@@ -42,7 +42,7 @@ api.interceptors.request.use((config) => {
 });
 
 /*───────────────────────────────*
- *  Finnhub API 함수              *
+ *  Finnhub API 함수
  *───────────────────────────────*/
 
 /** IPO 캘린더 */
@@ -51,8 +51,18 @@ export async function getIpoCalendar(
   to: string
 ): Promise<IpoItem[]> {
   const res = await api.get("/calendar/ipo", { params: { from, to } });
-  const { ipoCalendar } = res.data as { ipoCalendar: IpoItem[] };
-  return ipoCalendar;
+  const { ipoCalendar = [] } = res.data as { ipoCalendar: Partial<IpoItem>[] };
+
+  // status가 없으면 Pending 으로 기본값 지정
+  return ipoCalendar.map((raw) => ({
+    symbol: raw.symbol ?? "N/A",
+    company: raw.name ?? raw.company ?? "N/A",
+    exchange: raw.exchange ?? "N/A",
+    date: raw.date ?? "",
+    numberOfShares: Number(raw.numberOfShares ?? 0),
+    price: raw.price ?? "N/A",
+    status: raw.status ?? "Pending",
+  }));
 }
 
 /** 회사 프로필 */

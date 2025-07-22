@@ -1,46 +1,29 @@
-"use client";
-import { useState } from "react";
-import {
-  getIpoCalendar,
-  getCompanyProfile,
-  IpoItem,
-} from "@/lib/finnhub";
+// src/hooks/useIpoCalendar.ts
+import { useQuery } from '@tanstack/react-query';
+import { getIpoCalendar, IpoItem } from '@/lib/finnhub';
 
-/**
- * IPO 캘린더를 가져오고 상태로 저장하는 커스텀 훅
- */
-export function useIpoCalendar() {
-  const [ipos, setIpos] = useState<IpoItem[]>([]);
-  const [loading, setLoading] = useState(false);
+/** 컴포넌트에서 전달받을 파라미터 */
+export interface UseIpoCalendarParams {
+  from: string;        // YYYY‑MM‑DD
+  to: string;          // YYYY‑MM‑DD
+  enabled: boolean;    // Fetch 버튼을 눌렀을 때 true
+}
 
-  /**
-   * @param from  시작 날짜 (YYYY-MM-DD)
-   * @param to    종료 날짜 (YYYY-MM-DD)
-   */
-  async function fetchIpos(from: string, to: string) {
-    setLoading(true);
-    try {
-      // Next.js API 라우트 호출 (CORS 문제 없음)
-      const res = await fetch(`/api/ipo?from=${from}&to=${to}`);
-      const { ipoCalendar } = (await res.json()) as { ipoCalendar: IpoItem[] };
-  
-      // 회사명 채우기
-      const withNames = await Promise.all(
-        ipoCalendar.map(async (item) => {
-          if (item.company) return item;
-          const profile = await fetch(`/api/profile?symbol=${item.symbol}`).then(
-            (r) => r.json()
-          );
-          return { ...item, company: profile.name ?? "N/A" };
-        })
-      );
-  
-      setIpos(withNames);
-    } finally {
-      setLoading(false);
-    }
-  }
-  
+/** react‑query 래퍼 – default export */
+export default function useIpoCalendar(
+  { from, to, enabled }: UseIpoCalendarParams,
+) {
+  return useQuery<IpoItem[], Error>({
+    /** 캐시 키: 날짜가 바뀌면 새로 가져옴 */
+    queryKey: ['ipoCalendar', from, to],
 
-  return { ipos, loading, fetchIpos };
+    /** Finnhub API 호출 */
+    queryFn: () => getIpoCalendar(from, to),
+
+    /** 버튼 누를 때만 실행 */
+    enabled,
+
+    /** 30 분 동안 캐시 유지 */
+    staleTime: 1_800_000,
+  });
 }
