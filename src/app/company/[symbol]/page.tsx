@@ -1,84 +1,97 @@
-import { notFound } from 'next/navigation';
-import { getCompanyProfile } from '@/lib/finnhub';
+/* src/app/company/[symbol]/page.tsx
+   ✔ Next 15 타입 통과 (params/searchParams = Promise)
+   ✔ 로고·웹사이트·산업 정보 카드
+   ✔ 뒤로가기 시 날짜 범위 복원 */
 
-/* ───────── 타입 ───────── */
-interface Props {
-  params: { symbol: string };
-}
-
-/* ───────── 페이지 메타 (탭 제목) ───────── */
-export async function generateMetadata({ params }: Props) {
-  return { title: `${params.symbol} | IPO Tracker` };
-}
-
-/* ───────── 회사 프로필 페이지 ───────── */
-export default async function CompanyPage({ params }: Props) {
-  /* ① 동적 파라미터 정리 */
-  const symbol = decodeURIComponent(params.symbol ?? '').toUpperCase();
-  if (!symbol) notFound();
-
-  /* ② Finnhub API 호출 */
-  const profile = await getCompanyProfile(symbol);
-
-  /* ③ 데이터 없으면 placeholder */
-  if (!profile || Object.keys(profile).length === 0) {
-    return (
-      <main className="company-container">
-        <h1>{symbol}</h1>
-        <p>No profile information found.</p>
-      </main>
-    );
-  }
-
-  /* ④ 정상 렌더 */
-  return (
-    <main className="company-container">
-      <h1>{profile.name ?? symbol}</h1>
-
-      <table className="company-table">
-        <tbody>
-          <tr>
-            <th>Symbol</th>
-            <td>{symbol}</td>
-          </tr>
-          <tr>
-            <th>Company</th>
-            <td>{profile.name ?? '—'}</td>
-          </tr>
-          <tr>
-            <th>Exchange</th>
-            <td>{profile.exchange ?? '—'}</td>
-          </tr>
-          <tr>
-            <th>Industry</th>
-            <td>{profile.finnhubIndustry ?? '—'}</td>
-          </tr>
-          <tr>
-            <th>Website</th>
-            <td>
-              {profile.weburl ? (
-                <a href={profile.weburl} target="_blank" rel="noopener noreferrer">
-                  {profile.weburl}
-                </a>
-              ) : (
-                '—'
-              )}
-            </td>
-          </tr>
-          <tr>
-            <th>IPO Date</th>
-            <td>{profile.ipo ?? '—'}</td>
-          </tr>
-          <tr>
-            <th>Market Cap</th>
-            <td>
-              {profile.marketCapitalization
-                ? `${profile.marketCapitalization.toLocaleString()} M`
-                : '—'}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </main>
-  );
-}
+   import { notFound } from "next/navigation";
+   import Link from "next/link";
+   import Image from "next/image";
+   import { fetchCompanyProfile } from "@/lib/finnhub";
+   
+   /** 동적 세그먼트 타입 */
+   type RouteParams = { symbol: string };
+   
+   /** 쿼리 파라미터 타입 */
+   type Query = { [key: string]: string | undefined };
+   
+   export default async function CompanyPage({
+     params,
+     searchParams,
+   }: {
+     params: Promise<RouteParams>;   // ★ Promise!
+     searchParams: Promise<Query>;  // ★ Promise!
+   }) {
+     const { symbol } = await params;
+     const query = await searchParams;
+   
+     const profile = await fetchCompanyProfile(symbol);
+     if (!profile) notFound();
+   
+     /* 뒤로가기 링크에 날짜 범위 유지 */
+     const backQuery =
+       query.from && query.to ? `?from=${query.from}&to=${query.to}` : "";
+   
+     return (
+       <main className="min-h-screen flex flex-col items-center p-8">
+         <Link
+           href={"/" + backQuery}
+           className="self-start mb-6 text-blue-600 hover:underline"
+         >
+           ← Back
+         </Link>
+   
+         {profile.logo && (
+           <Image
+             src={profile.logo}
+             alt={`${profile.name} logo`}
+             width={80}
+             height={80}
+             className="mb-4 rounded"
+           />
+         )}
+   
+         <h1 className="text-3xl font-bold mb-6 text-center">
+           {profile.name} ({profile.ticker})
+         </h1>
+   
+         <div className="w-full max-w-lg bg-white rounded-lg shadow p-6 space-y-3">
+           <Info label="Exchange" value={profile.exchange} />
+           {profile.ipo && <Info label="IPO Date" value={profile.ipo} />}
+           {profile.finnhubIndustry && (
+             <Info label="Industry" value={profile.finnhubIndustry} />
+           )}
+           {profile.weburl && (
+             <Info
+               label="Website"
+               value={
+                 <a
+                   href={profile.weburl}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="text-blue-600 hover:underline"
+                 >
+                   {profile.weburl.replace(/^https?:\/\//, "")}
+                 </a>
+               }
+             />
+           )}
+         </div>
+       </main>
+     );
+   }
+   
+   /* 정보 행 컴포넌트 */
+   function Info({
+     label,
+     value,
+   }: {
+     label: string;
+     value: React.ReactNode;
+   }) {
+     return (
+       <p className="text-lg">
+         <span className="font-semibold">{label}:</span> {value}
+       </p>
+     );
+   }
+   

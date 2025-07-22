@@ -1,102 +1,113 @@
+/* src/app/page.tsx */
 'use client';
 
 import { useState } from 'react';
 import dayjs from 'dayjs';
-import Link from 'next/link';
 import useIpoCalendar from '@/hooks/useIpoCalendar';
+import Link from 'next/link';
 import clsx from 'clsx';
-import { IpoItem } from '@/lib/finnhub';
-
-/* ────────── 상태별 색상 클래스 매핑 ────────── */
-const statusColor = (status: string) =>
-  ({
-    expected:  'status-expected',
-    priced:    'status-priced',
-    filed:     'status-filed',
-    withdrawn: 'status-withdrawn',
-  }[status.toLowerCase()] ?? '');
 
 export default function Home() {
-  /* ───────── 날짜 상태 ───────── */
-  const [from, setFrom] = useState(dayjs().startOf('month').format('YYYY-MM-DD'));
-  const [to,   setTo]   = useState(dayjs().endOf('month').format('YYYY-MM-DD'));
+  /* ───── 날짜 상태 ───── */
+  const today = dayjs().format('YYYY-MM-DD');
+  const monthAgo = dayjs().subtract(1, 'month').format('YYYY-MM-DD');
+  const [from, setFrom] = useState(monthAgo);
+  const [to, setTo] = useState(today);
 
-  /* ───────── IPO 데이터 ───────── */
-  const { data: ipos = [], isLoading, refetch } = useIpoCalendar({
+  /* ───── API 호출 ───── */
+  const { data, isLoading, error } = useIpoCalendar({
     from,
     to,
-    enabled: false,              // 버튼 눌러야 실행
+    enabled: true,
   });
 
+  /* ───── 렌더링 ───── */
   return (
-    <main className="container">
-      {/* ---------- 헤더 ---------- */}
-      <h1 className="title">IPO Tracker</h1>
+    <main style={{ padding: '2rem', textAlign: 'center' }}>
+      <h1 className="text-3xl font-bold mb-4">IPO Tracker</h1>
 
-      {/* ---------- 날짜 & 버튼 ---------- */}
-      <div className="controls">
-        <div className="date-field">
-          <label htmlFor="from">From</label>
+      {/* 날짜 선택 */}
+      <div className="mb-6 flex justify-center gap-4">
+        <div>
+          <label className="block text-sm">From</label>
           <input
-            id="from"
             type="date"
             value={from}
-            onChange={(e) => setFrom(e.target.value)}
+            onChange={e => setFrom(e.target.value)}
+            className="border px-2 py-1 rounded"
           />
         </div>
 
-        <div className="date-field">
-          <label htmlFor="to">To</label>
+        <div>
+          <label className="block text-sm">To</label>
           <input
-            id="to"
             type="date"
             value={to}
-            onChange={(e) => setTo(e.target.value)}
+            onChange={e => setTo(e.target.value)}
+            className="border px-2 py-1 rounded"
           />
         </div>
 
         <button
-          className="fetch-btn"
-          onClick={() => refetch()}
-          disabled={isLoading}
+          onClick={() => null /* 이미 useIpoCalendar 가 알아서 refetch */}
+          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
         >
-          {isLoading ? 'Loading…' : 'Fetch IPOs'}
+          Fetch IPOs
         </button>
       </div>
 
-      {/* ---------- 표 ---------- */}
-      <table className="ipo-table">
+      {/* 표 */}
+      <table className="mx-auto w-[720px] text-left border-collapse">
         <thead>
-          <tr>
-            <th>Date</th>
-            <th>Symbol</th>
-            <th>Company</th>
-            <th>Status</th>
+          <tr className="border-b">
+            <th className="p-2">Date</th>
+            <th className="p-2">Symbol</th>
+            <th className="p-2">Company</th>
+            <th className="p-2">Status</th>
           </tr>
         </thead>
-
         <tbody>
-          {ipos.length === 0 && (
+          {isLoading && (
             <tr>
-              <td colSpan={4} className="no-data">
-                No data
+              <td colSpan={4} className="p-4 text-center">
+                Loading…
               </td>
             </tr>
           )}
 
-          {ipos.map((ipo: IpoItem) => (
-            <tr key={`${ipo.symbol}-${ipo.date}`}>
-              <td>{ipo.date}</td>
-
-              {/* 심볼 클릭 → /company/[symbol] 이동 */}
-              <td>
-                <Link href={`/company/${ipo.symbol}`} className="symbol-link">
-                  {ipo.symbol}
-                </Link>
+          {error && (
+            <tr>
+              <td colSpan={4} className="p-4 text-center text-red-600">
+                Error: {error.message}
               </td>
+            </tr>
+          )}
 
-              <td>{ipo.company ?? 'N/A'}</td>
-              <td className={clsx(statusColor(ipo.status))}>{ipo.status}</td>
+          {data?.length === 0 && (
+            <tr>
+              <td colSpan={4} className="p-4 text-center">
+                No data
+              </td>
+            </tr>
+          )}
+
+          {data?.map(item => (
+            <tr key={item.symbol} className="border-b last:border-0">
+              <td className="p-2">{item.date}</td>
+              <td className="p-2 text-blue-600 underline">
+                <Link href={`/company/${item.symbol}`}>{item.symbol}</Link>
+              </td>
+              <td className="p-2">{item.company ?? 'N/A'}</td>
+              <td
+                className={clsx('p-2 capitalize', {
+                  'text-orange-600': item.status === 'expected',
+                  'text-green-700': item.status === 'priced',
+                  'text-blue-700': item.status === 'filed',
+                  'text-red-600': item.status === 'withdrawn',
+                })}
+              >
+                {item.status}
+              </td>
             </tr>
           ))}
         </tbody>
